@@ -45,7 +45,7 @@ fn main() {
             move |req: Request<Body>| match (req.method(), req.uri().path()) {
                 // GET /proc/groupby/owner returns the number of processes for each owner
                 (&Method::GET, "/proc/groupby/owner") => {
-                    let procsByUserStoreLocal = procsByUserStoreClone.lock().unwrap(); // TODO: print error instead of panic
+                    let procsByUserStoreLocal = procsByUserStoreClone.lock().unwrap();
                     Response::new(Body::from(
                         json!({ "procs_by_owner": *procsByUserStoreLocal }).to_string(),
                     ))
@@ -65,8 +65,6 @@ fn main() {
     let server = Server::bind(&addr)
         .serve(router)
         .map_err(|e| eprintln!("server error: {}", e));
-    dbg!("running server on 0:0:0:0:3000");
+    println!("running server on {}", addr.to_string());
     hyper::rt::run(server);
-
-    // handle.join();
 }
