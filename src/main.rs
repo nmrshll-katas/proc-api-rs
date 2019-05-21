@@ -65,8 +65,6 @@ fn main() {
     let server = Server::bind(&addr)
         .serve(router)
         .map_err(|e| eprintln!("server error: {}", e));
-    dbg!("running server on 0:0:0:0:3000");
+    println!("running server on {}", addr.to_string());
     hyper::rt::run(server);
-
-    // handle.join();
 }
