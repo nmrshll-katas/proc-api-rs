@@ -35,3 +35,56 @@ pub fn start_server(sharedState: Arc<SharedProcsState>) {
     println!("running server on {}", addr.to_string());
     hyper::rt::run(server);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hyper::rt::{self, Future};
+    use hyper::Client;
+    use std::thread;
+
+    // NOTE: test setup is heavy and problematic (spinning up several server on the same port makes it impossible to run tests in parallel)
+    // Ideally it would be nice to have something that takes the server router as a parameter and mocks every route,
+    // which is callable directly in memory (doesn't need a port, doesn't rely on the OS networking)
+    // I'm still figuring out how to do that properly in Rust (I will update this repo when I find a proper way to test, but I wanted to send this already)
+
+    #[test]
+    fn test_GET_proc_indexby_owner() {
+        let state = Arc::new(SharedProcsState::default());
+        thread::spawn(move || start_server(state.clone()));
+
+        rt::run(rt::lazy(|| {
+            let client = Client::new();
+            let uri = "http://localhost:3000/proc/indexby/owner".parse().unwrap();
+
+            client
+                .get(uri)
+                .map(|res| {
+                    assert_eq!(res.status(), 200);
+                })
+                .map_err(|_| {
+                    assert!(false); //fail test
+                })
+        }));
+    }
+
+    #[test]
+    fn test_404() {
+        let state = Arc::new(SharedProcsState::default());
+        thread::spawn(move || start_server(state.clone()));
+
+        rt::run(rt::lazy(|| {
+            let client = Client::new();
+            let uri = "http://localhost:3000/inexistent_path".parse().unwrap();
+
+            client
+                .get(uri)
+                .map(|res| {
+                    assert_eq!(res.status(), 404);
+                })
+                .map_err(|_| {
+                    assert!(false); //fail test
+                })
+        }));
+    }
+}
